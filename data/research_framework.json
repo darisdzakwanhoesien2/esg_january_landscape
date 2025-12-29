@@ -44,13 +44,38 @@
   },
 
   "methodology": [
-    { "id": "M1", "name": "Indicator Definition" },
-    { "id": "M2", "name": "Self-Assessment" },
-    { "id": "M3", "name": "ESG Scoring" },
-    { "id": "M4", "name": "ML Training" },
-    { "id": "M5", "name": "Explainability" },
-    { "id": "M6", "name": "Roadmap Generation" }
-  ],
+  {
+    "id": "M1",
+    "label": "Indicator Definition",
+    "description": "Define SME-appropriate ESG indicators with low reporting burden."
+  },
+  {
+    "id": "M2",
+    "label": "Self-Assessment",
+    "description": "Collect ESG data via Likert-scale self-assessment (0–5)."
+  },
+  {
+    "id": "M3",
+    "label": "ESG Scoring",
+    "description": "Aggregate indicator scores into a normalized ESG score (0–100)."
+  },
+  {
+    "id": "M4",
+    "label": "ML Training",
+    "description": "Train supervised regression models using ESG indicators."
+  },
+  {
+    "id": "M5",
+    "label": "Explainability",
+    "description": "Apply SHAP-based explainable AI to identify ESG drivers."
+  },
+  {
+    "id": "M6",
+    "label": "Roadmap Generation",
+    "description": "Generate rule-based ESG improvement recommendations."
+  }
+]
+,
 
   "connections": [
     { "source": "RQ1", "target": "O1" },
