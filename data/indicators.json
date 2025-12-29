@@ -1,0 +1,53 @@
+{
+  "Environmental": [
+    {
+      "id": "E1",
+      "name": "Energy consumption monitoring",
+      "pillar": "E"
+    },
+    {
+      "id": "E2",
+      "name": "Carbon emissions tracking",
+      "pillar": "E"
+    },
+    {
+      "id": "E3",
+      "name": "Waste management policy",
+      "pillar": "E"
+    }
+  ],
+  "Social": [
+    {
+      "id": "S1",
+      "name": "Employee health and safety",
+      "pillar": "S"
+    },
+    {
+      "id": "S2",
+      "name": "Diversity and inclusion policy",
+      "pillar": "S"
+    },
+    {
+      "id": "S3",
+      "name": "Community engagement initiatives",
+      "pillar": "S"
+    }
+  ],
+  "Governance": [
+    {
+      "id": "G1",
+      "name": "Board oversight structure",
+      "pillar": "G"
+    },
+    {
+      "id": "G2",
+      "name": "Anti-corruption policy",
+      "pillar": "G"
+    },
+    {
+      "id": "G3",
+      "name": "Data protection and privacy",
+      "pillar": "G"
+    }
+  ]
+}
