@@ -1,0 +1,80 @@
+{
+  "research_questions": [
+    {
+      "id": "RQ1",
+      "title": "Assessment & Maturity",
+      "question": "How can SME-specific ESG indicators be operationalized into a structured self-assessment system that produces a meaningful ESG score?"
+    },
+    {
+      "id": "RQ2",
+      "title": "Predictive Capability",
+      "question": "Can machine learning models trained on limited ESG indicators accurately estimate SME ESG scores?"
+    },
+    {
+      "id": "RQ3",
+      "title": "Explainability & Trust",
+      "question": "Which ESG indicators most strongly influence predicted ESG scores, and can these influences be explained transparently?"
+    },
+    {
+      "id": "RQ4",
+      "title": "Decision Support",
+      "question": "Can explainable ESG predictions be translated into actionable improvement roadmaps for SMEs?"
+    }
+  ],
+
+  "objectives": [
+    { "id": "O1", "text": "Design an SME-oriented ESG indicator framework" },
+    { "id": "O2", "text": "Implement an automated ESG scoring mechanism" },
+    { "id": "O3", "text": "Develop an ML-based ESG prediction model" },
+    { "id": "O4", "text": "Apply explainable AI to identify ESG drivers" },
+    { "id": "O5", "text": "Generate improvement recommendations" }
+  ],
+
+  "hypotheses": [
+    { "id": "H1", "text": "SME ESG self-assessment scores correlate positively with ML-predicted ESG scores" },
+    { "id": "H2", "text": "Tree-based models outperform linear models in ESG score prediction" },
+    { "id": "H3", "text": "A small subset of ESG indicators explains the majority of score variance" },
+    { "id": "H4", "text": "Explainability improves decision usability for SMEs" }
+  ],
+
+  "metrics": {
+    "prediction": ["RMSE", "MAE", "R2"],
+    "explainability": ["SHAP_mean_abs", "Ranking_Stability"],
+    "decision_quality": ["Coverage_Low_Scores", "Roadmap_Actionability"]
+  },
+
+  "methodology": [
+    { "id": "M1", "name": "Indicator Definition" },
+    { "id": "M2", "name": "Self-Assessment" },
+    { "id": "M3", "name": "ESG Scoring" },
+    { "id": "M4", "name": "ML Training" },
+    { "id": "M5", "name": "Explainability" },
+    { "id": "M6", "name": "Roadmap Generation" }
+  ],
+
+  "connections": [
+    { "source": "RQ1", "target": "O1" },
+    { "source": "RQ1", "target": "O2" },
+
+    { "source": "RQ2", "target": "O3" },
+    { "source": "RQ3", "target": "O4" },
+    { "source": "RQ4", "target": "O5" },
+
+    { "source": "O1", "target": "M1" },
+    { "source": "O2", "target": "M2" },
+    { "source": "O2", "target": "M3" },
+    { "source": "O3", "target": "M4" },
+    { "source": "O4", "target": "M5" },
+    { "source": "O5", "target": "M6" },
+
+    { "source": "M4", "target": "H1" },
+    { "source": "M4", "target": "H2" },
+    { "source": "M5", "target": "H3" },
+    { "source": "M6", "target": "H4" },
+
+    { "source": "H1", "target": "RMSE" },
+    { "source": "H1", "target": "R2" },
+    { "source": "H3", "target": "SHAP_mean_abs" },
+    { "source": "H4", "target": "Roadmap_Actionability" }
+  ]
+}

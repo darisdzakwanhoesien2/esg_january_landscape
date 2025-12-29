@@ -417,3 +417,101 @@ If you want, say:
 I’ll do it **without changing your current code structure**.
 
 # esg_january_landscape
+
+Perfect question — this is exactly where your work **becomes system-level and publication-ready**.
+
+Below I give you **three tightly connected artifacts**:
+
+1. **A unified research JSON knowledge structure** (RQ ↔ Objectives ↔ Hypotheses ↔ Metrics ↔ Methodology)
+2. **Explicit relationship edges** (machine-readable)
+3. **A Sankey diagram (Streamlit-ready) that visualizes the full logic chain**
+
+This lets you:
+
+* trace **RQ → method → metric**
+* justify **design choices**
+* visually communicate your framework (papers, defense, demos)
+
+---
+
+## 1️⃣ Unified Research Knowledge JSON
+
+📁 `data/research_framework.json`
+
+```json
+```
+
+This JSON is:
+
+* **machine-readable**
+* **graph-ready**
+* **ontology-compatible**
+* **future-proof** (can become KG / RDF later)
+
+---
+
+## 2️⃣ Sankey Diagram Logic (What It Shows)
+
+![Image](https://www.researchgate.net/publication/325785277/figure/fig1/AS%3A675040488079362%401537953602336/Sankey-diagram-showing-the-data-collection-methods-right-employed-in-evaluation.ppm)
+
+![Image](https://www.researchgate.net/publication/385144401/figure/fig2/AS%3A11431281285229725%401729665209140/Sankey-diagram-on-artificial-intelligence-machine-learning-and-deep-learning-in-cloud.jpg)
+
+![Image](https://www.researchgate.net/publication/258276570/figure/fig2/AS%3A667809621221389%401536229629984/Flow-diagram-of-the-decision-support-system.png)
+
+**Flow direction:**
+
+```
+Research Questions
+        ↓
+    Objectives
+        ↓
+   Methodology
+        ↓
+   Hypotheses
+        ↓
+     Metrics
+```
+
+This answers reviewers’ favorite question:
+
+> “How exactly do your research questions translate into measurable outcomes?”
+
+---
+
+## 3️⃣ Complete Streamlit Sankey Diagram Code
+
+📁 `pages/7_research_sankey.py`
+
+```python
+```
+
+---
+
+## 4️⃣ Why This Is Very Strong Academically
+
+You now have:
+
+✅ **Formal research traceability**
+✅ **Visual justification of methodology**
+✅ **Machine-readable research design**
+✅ **Decision-support system alignment**
+✅ **Ready-to-extend knowledge graph**
+
+This is **exactly** the kind of artifact expected in:
+
+* PhD methodology chapters
+* design science research
+* AI system papers
+* EU Horizon / NSF proposals
+
+---
+
+## 🔜 Natural Next Extensions (Choose One)
+
+1. **Convert this JSON → Knowledge Graph (NetworkX / RDF)**
+2. **Auto-generate Methodology section from JSON**
+3. **Add empirical results as weighted Sankey flows**
+4. **Link each Method → actual Python module**
+5. **Add temporal evolution (longitudinal ESG)**
+
+Just tell me which one you want next — we’ll build it cleanly on top of this.
