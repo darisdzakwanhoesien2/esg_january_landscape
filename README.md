@@ -1,5 +1,6 @@
 1. https://chatgpt.com/c/69529ef3-111c-8333-a2bd-1ce114cf06b6
 2. https://scholar.google.com/scholar_labs/search/session/14742283604987517681?hl=en
+3. https://esg-testing.streamlit.app
 
 Below is a **complete, research-grounded Streamlit application blueprint + runnable starter code** that synthesizes the papers you listed into **one coherent ESG Decision Support System (DSS) for SMEs**.
 
