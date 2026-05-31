@@ -52,6 +52,8 @@ y = data["esg_score"]
 # -----------------------------
 model = train_model(X, y)
 
+# SHAP can be computationally expensive. Using the training matrix as the
+# background distribution helps estimate "typical" feature values for SMEs.
 explainer = shap.Explainer(model, X)
 shap_values = explainer(X)
 

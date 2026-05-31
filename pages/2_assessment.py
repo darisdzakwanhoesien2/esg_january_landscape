@@ -7,9 +7,10 @@ responses = {}
 
 for pillar, indicators in ESG_INDICATORS.items():
     st.subheader(pillar)
-    for ind in indicators:
-        responses[ind] = st.slider(
-            ind,
+    for indicator in indicators:
+        # Store response by indicator ID (E1..G3) so it matches ML feature columns.
+        responses[indicator["id"]] = st.slider(
+            indicator["label"],
             0, 5, 0,
             help="0 = not implemented, 5 = fully implemented"
         )

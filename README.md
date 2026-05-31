@@ -1,1007 +1,913 @@
-1. https://chatgpt.com/c/69529ef3-111c-8333-a2bd-1ce114cf06b6
-2. https://scholar.google.com/scholar_labs/search/session/14742283604987517681?hl=en
-3. https://esg-testing.streamlit.app
+# SME ESG Decision Support System (Streamlit)
 
-Below is a **complete, research-grounded Streamlit application blueprint + runnable starter code** that synthesizes the papers you listed into **one coherent ESG Decision Support System (DSS) for SMEs**.
+This repository contains a research-oriented **ESG Decision Support System (DSS) for SMEs** built with **Streamlit**. It includes:
+- A simple **self-assessment** (Likert 0–5)
+- A deterministic **ESG score** (0–100)
+- An **ML-based ESG score predictor**
+- **Explainability** (SHAP)
+- A rule-based **improvement roadmap**
+- A **research framework Sankey** view (from `data/research_framework.json`)
 
-I’ve structured this in **four layers**:
-
-1. **Research-to-System Mapping (why each module exists)**
-2. **System Architecture (what the app looks like conceptually)**
-3. **Streamlit App Features (what the user can do)**
-4. **Complete Streamlit Project Code (minimal but extensible, runs end-to-end)**
-
-You can treat this as:
-
-* a **PhD / research prototype**
-* a **grant-ready demonstrator**
-* or the **foundation of a production ESG platform**
+The previous long-form blueprint README has been preserved as `notes.md`.
 
 ---
 
-## 1. Research → System Mapping (Traceability)
+## Quickstart
 
-Your literature naturally clusters into **six functional pillars**:
+### 1) Install dependencies
 
-| Pillar                                | Supported by research                                    |
-| ------------------------------------- | -------------------------------------------------------- |
-| **ESG Self-Assessment & Maturity**    | Markopoulos (2023), Murè et al. (2024), CSR4UTOOL        |
-| **Indicator & Ontology Layer**        | ESGOnt (2025), Knowledge Graph for ESG Accounting (2024) |
-| **ML-based ESG Scoring**              | Chou (2024), Choi et al. (2024), Krappel et al. (2021)   |
-| **Causal & Explainable AI**           | Chou (2024), XAI-ESG papers                              |
-| **Environmental Evidence (Optional)** | Ozkan et al. (2023), Copernicus                          |
-| **Governance, Trust & Auditability**  | Blockchain-ESG (2025), IoT-Blockchain ESG                |
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
-This app **does NOT hard-code one method**. Instead, it lets you **layer maturity → indicators → ML → explainability → roadmap**, exactly as suggested across the literature.
+### 2) Run the app
 
----
+```bash
+streamlit run app.py
+```
 
-## 2. High-Level System Architecture
-
-![Image](https://www.researchgate.net/publication/282288990/figure/fig1/AS%3A566850373521408%401512159068771/Decision-Support-System-DSS-architecture.png)
-
-![Image](https://www.researchgate.net/profile/Haseena-Alkatheeri/publication/372468824/figure/fig2/AS%3A11431281217937359%401705441293225/SMEESG-assessment-execution-process_Q320.jpg)
-
-![Image](https://media.springernature.com/lw1200/springer-static/image/art%3A10.1007%2Fs10479-023-05514-z/MediaObjects/10479_2023_5514_Fig1_HTML.png)
-
-### Architecture Flow (serial + parallel, from Markopoulos 2023)
-
-**Serial (Core Assessment Pipeline)**
-
-1. SME Profile
-2. ESG Maturity & Awareness
-3. Indicator Mapping (E, S, G)
-4. Scoring Engine
-5. Gap Analysis
-
-**Parallel (Advanced Intelligence)**
-
-* ML-based ESG Prediction
-* Causal/XAI Analysis
-* Roadmap & Recommendations
+Then open the Streamlit URL shown in your terminal.
 
 ---
 
-## 3. Streamlit App Features (User-Facing)
+## How the app works
 
 ### Pages
 
-1. **🏢 SME Profile**
-2. **📋 ESG Self-Assessment**
-3. **📊 ESG Scoring Dashboard**
-4. **🤖 ML ESG Predictor**
-5. **🧠 Explainability (XAI / Causal)**
-6. **🛣 ESG Roadmap**
-7. **📦 Data Export & Audit Log**
+- `pages/2_assessment.py`: Captures SME self-assessment responses (0–5) per indicator.
+- `pages/3_scoring.py`: Computes a normalized ESG score (0–100) from the assessment.
+- `pages/4_ml_prediction.py`: Trains a regression model on `data/sample_training.csv` and predicts a score for the current assessment.
+- `pages/5_explainability.py`: Uses SHAP to show global feature influence (beeswarm).
+- `pages/6_roadmap.py`: Lists indicators with low scores (<3) as improvement gaps.
+- `pages/7_research_sankey.py`: Visualizes research logic flow from `data/research_framework.json`.
+
+### Indicator model (important)
+
+The app uses a canonical indicator set in `core/indicators.py`:
+- Labels are human-friendly (used for the UI)
+- IDs are short (`E1..E3`, `S1..S3`, `G1..G3`) and are used as *feature names*
+
+This is critical because the ML training data in `data/sample_training.csv` is columned by these IDs. The self-assessment page stores responses keyed by ID so the predictor can safely build a feature vector that matches the model.
 
 ---
 
-## 4. Complete Streamlit App (Runnable)
+## Bugs / broken logic found (and fixed)
 
-### 4.1 Project Structure
+### 1) ML feature mismatch between assessment and training data (FIXED)
+
+**Problem**
+- The self-assessment stored responses using full text labels (e.g., `"Energy consumption monitoring"`).
+- The training data columns are IDs (e.g., `E1`, `E2`, …).
+- That mismatch causes model input columns not to align, leading to incorrect predictions or errors depending on model backend.
+
+**Fix**
+- Updated `core/indicators.py` to define each indicator as `{id, label}`.
+- Updated `pages/2_assessment.py` to store responses keyed by `id`.
+- Added a defensive check in `pages/4_ml_prediction.py` that stops with a clear error if any expected feature columns are missing.
+
+### 2) Accidental committed build artifacts (`__pycache__/*.pyc`) (FIXED)
+
+**Problem**
+- Compiled Python artifacts were tracked in git (`core/__pycache__/*.pyc`), which should not be committed.
+
+**Fix**
+- Removed tracked `*.pyc` files from git.
+- Added a `.gitignore` to prevent future commits of `__pycache__/` and other common local artifacts.
+
+---
+
+## Code cleanup performed
+
+- Removed redundant commented-out legacy code in `core/ml_models.py`.
+- Improved readability and safety in `core/scoring.py` (type hints + empty-input guard).
+- Simplified wording in `pages/4_ml_prediction.py` spinner text (the model may be XGBoost *or* RandomForest).
+
+---
+
+## Inline comments added (where logic is complex)
+
+- `core/indicators.py`: Explains why indicator IDs are required for ML feature compatibility.
+- `pages/2_assessment.py`: Notes that session state is stored by ID to match ML columns.
+- `pages/4_ml_prediction.py`: Notes fallback model behavior + adds a “missing features” check.
+- `pages/5_explainability.py`: Explains the SHAP background dataset choice at a high level.
+
+---
+
+## Project structure
 
 ```text
-esg_sme_dss/
-│
+.
 ├── app.py
+├── core/
+│   ├── indicators.py
+│   ├── ml_models.py
+│   ├── scoring.py
+│   └── explainability.py
+├── data/
+│   ├── indicators.json
+│   ├── research_framework.json
+│   └── sample_training.csv
 ├── pages/
-│   ├── 1_profile.py
 │   ├── 2_assessment.py
 │   ├── 3_scoring.py
 │   ├── 4_ml_prediction.py
 │   ├── 5_explainability.py
 │   ├── 6_roadmap.py
-│
-├── core/
-│   ├── indicators.py
-│   ├── scoring.py
-│   ├── ml_models.py
-│   ├── explainability.py
-│
-├── data/
-│   ├── indicators.json
-│   ├── sample_training.csv
-│
-├── requirements.txt
-```
-
-Great — below is a **research-grade workflow + fully runnable artifacts** that are **explicitly derived from the Streamlit ESG DSS you already built**.
-I’ll keep this **tight, technical, and traceable**, so you can reuse it in:
-
-* a **methods section**
-* a **PhD proposal**
-* a **journal system design paper**
-* or a **grant work package**
-
----
-
-# 1. Research Workflow (System-Driven)
-
-![Image](https://www.mdpi.com/sustainability/sustainability-15-00200/article_deploy/html/images/sustainability-15-00200-g001.png)
-
-![Image](https://media.springernature.com/lw685/springer-static/image/art%3A10.1007%2Fs10479-023-05514-z/MediaObjects/10479_2023_5514_Fig1_HTML.png)
-
-![Image](https://quadrant-solutions.com/wp-content/uploads/2024/08/pic-1.png)
-
----
-
-## 1.1 Research Problem
-
-> SMEs lack standardized, low-cost, explainable ESG decision-support systems due to:
-
-* limited disclosure
-* heterogeneous data
-* lack of causal transparency
-* high reporting burden
-
----
-
-## 1.2 Research Questions (RQ)
-
-### **RQ1 – Assessment & Maturity**
-
-> How can SME-specific ESG indicators be operationalized into a structured self-assessment system that produces a meaningful ESG score?
-
-### **RQ2 – Predictive Capability**
-
-> Can machine learning models trained on limited ESG indicators accurately estimate SME ESG scores?
-
-### **RQ3 – Explainability & Trust**
-
-> Which ESG indicators most strongly influence predicted ESG scores, and can these influences be explained transparently?
-
-### **RQ4 – Decision Support**
-
-> Can explainable ESG predictions be translated into actionable improvement roadmaps for SMEs?
-
----
-
-## 1.3 Research Objectives
-
-| ID | Objective                                      |
-| -- | ---------------------------------------------- |
-| O1 | Design an SME-oriented ESG indicator framework |
-| O2 | Implement an automated ESG scoring mechanism   |
-| O3 | Develop an ML-based ESG prediction model       |
-| O4 | Apply explainable AI to identify ESG drivers   |
-| O5 | Generate improvement recommendations           |
-
----
-
-## 1.4 Hypotheses
-
-| ID | Hypothesis                                                                       |
-| -- | -------------------------------------------------------------------------------- |
-| H1 | SME ESG self-assessment scores correlate positively with ML-predicted ESG scores |
-| H2 | Tree-based models (XGBoost) outperform linear models in ESG score prediction     |
-| H3 | A small subset of ESG indicators explains the majority of score variance         |
-| H4 | Explainability improves decision usability for SMEs                              |
-
----
-
-## 1.5 Evaluation Metrics
-
-### **Prediction Metrics**
-
-* RMSE
-* MAE
-* R²
-
-### **Explainability Metrics**
-
-* SHAP mean absolute importance
-* Indicator contribution ranking stability
-
-### **Decision Quality (Qualitative)**
-
-* Coverage of low-scoring indicators
-* Actionability of generated roadmap
-
----
-
-## 1.6 Methodology (Aligned with Code)
-
-### Step 1 – Indicator Definition
-
-* ESG indicators defined in `indicators.json`
-* SME-friendly, low reporting burden
-
-### Step 2 – Self-Assessment
-
-* Likert-scale scoring (0–5)
-* Stored in session state
-
-### Step 3 – Scoring
-
-* Normalized ESG score (0–100)
-
-### Step 4 – ML Training
-
-* Supervised regression (XGBoost)
-* Input: ESG indicators
-* Output: ESG score
-
-### Step 5 – Explainability
-
-* SHAP TreeExplainer
-* Feature-level attribution
-
-### Step 6 – Roadmap
-
-* Threshold-based gap detection
-* Rule-based recommendations
-
----
-
-# 2. Data Artifacts (COMPLETE)
-
----
-
-## 2.1 `data/indicators.json`
-
-```json
-
+│   └── 7_research_sankey.py
+├── notes.md
+├── outcome.md
+└── requirements.txt
 ```
 
 ---
 
-## 2.2 `data/sample_training.csv`
+## Notes / limitations
 
-> **Synthetic but realistic** — suitable for research prototypes
-
-```csv
-
-```
+- The ML workflow currently retrains the model on page load. If you want this to feel “production-like”, the next step is caching (`st.cache_resource`) and/or persisting a trained model artifact.
+- `core/explainability.py` exists but is not wired into the Streamlit page; `pages/5_explainability.py` currently does SHAP directly. If you want, I can refactor the page to use `ESGExplainability` consistently.
 
 ---
 
-# 3. Complete Code – `core/explainability.py`
+## Project overview
 
-This file is **standalone, reusable, and research-clean**.
+SMEs are increasingly asked to report and improve ESG practices, but they often lack:
+- A lightweight way to **self-assess** across E/S/G
+- A transparent way to **aggregate** results into a single score
+- A way to translate results into an actionable **improvement roadmap**
+
+This project provides a Streamlit-based decision support prototype that lets an SME:
+1) score itself on a small ESG indicator set (0–5 per indicator),
+2) compute a normalized overall ESG score (0–100),
+3) optionally run an ML model to predict an ESG score from the same indicators, and
+4) view explainability (SHAP) and a basic gap-driven roadmap.
+
+---
+
+## Tech stack
+
+- Language: Python 3 (tested in a local `venv`)
+- UI framework: Streamlit
+- Data: pandas, numpy
+- ML: scikit-learn (RandomForest fallback), xgboost (preferred if installed)
+- Explainability: shap
+- Visualization: matplotlib (SHAP plots), plotly (Sankey), networkx (installed; currently not required by the app)
+
+See `requirements.txt:1` for the authoritative dependency list.
+
+---
+
+## Architecture overview
+
+At a high level, the app is a set of Streamlit pages that share state via `st.session_state`:
+
+- **UI layer (`pages/*`)**
+  - `pages/2_assessment.py` writes `st.session_state["assessment"]` (indicator responses).
+  - `pages/3_scoring.py`, `pages/4_ml_prediction.py`, and `pages/6_roadmap.py` read from that state.
+- **Core logic (`core/*`)**
+  - `core/indicators.py` defines the canonical indicator set (IDs + labels).
+  - `core/scoring.py` implements deterministic scoring.
+  - `core/ml_models.py` trains an ML regressor (XGBoost if available, otherwise RandomForest).
+- **Data (`data/*`)**
+  - `data/sample_training.csv` is the training dataset for the ML predictor.
+  - `data/research_framework.json` drives the Sankey diagram page.
+
+Data flow (typical user path):
+1) Assessment page → stores `{E1..G3: 0..5}` in session state
+2) Scoring page → computes score from those values
+3) ML page → trains on `sample_training.csv` and predicts from session state
+4) Explainability page → trains + computes SHAP over the training data
+5) Roadmap page → lists low-scoring indicators as “gaps”
+
+---
+
+## Installation & setup
+
+### Prerequisites
+
+- Python 3.10+ recommended (this repo works with Python 3.12 in a virtualenv)
+- A working C/C++ build toolchain is **not** required if you use prebuilt wheels (typical on macOS/Linux), but large packages like `xgboost` can take time to download.
+
+### Steps
+
+```bash
+# 1) Create and activate a virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# 2) Install dependencies
+python -m pip install -r requirements.txt
+
+# 3) Run Streamlit
+streamlit run app.py
+```
+
+Troubleshooting:
+- If `xgboost` fails to install, the app still works: the ML module falls back to `RandomForestRegressor` automatically.
+
+---
+
+## Usage guide
+
+### Basic workflow (recommended order)
+
+1) Open the app and go to `📋 ESG Self-Assessment`
+   - For each indicator, choose a value from 0 to 5.
+   - The app stores responses using indicator IDs (`E1..G3`) so they match the ML dataset columns.
+
+2) Go to `📊 ESG Score`
+   - Shows the deterministic normalized score out of 100.
+
+3) Go to `🤖 ML-Based ESG Prediction`
+   - Trains a model on `data/sample_training.csv`.
+   - Predicts a score for the current assessment.
+   - If your assessment responses don’t match the model’s expected feature columns, the page will stop and show which columns are missing.
+
+4) Go to `🧠 Explainability (XAI)`
+   - Displays a SHAP beeswarm plot for global feature influence over the training data.
+
+5) Go to `🛣 ESG Improvement Roadmap`
+   - Lists any indicators scoring below 3 as “gaps” to improve.
+
+### Example: What an “assessment payload” looks like
+
+The app stores the assessment in session state as a flat dict keyed by indicator ID:
 
 ```python
-
-```
-
----
-
-# 4. How This Maps Cleanly to Literature
-
-| Literature Theme               | Implemented Here        |
-| ------------------------------ | ----------------------- |
-| SME maturity & self-assessment | Likert-based indicators |
-| ML-based ESG estimation        | XGBoost regression      |
-| Explainable ESG scoring        | SHAP                    |
-| Indicator reduction            | SHAP importance         |
-| Decision support               | Gap-based roadmap       |
-
----
-
-# 5. Ready-to-Publish Contributions
-
-You now have:
-
-✅ **Formal RQs, hypotheses, metrics**
-✅ **Executable system artifact**
-✅ **Reproducible data schema**
-✅ **Explainable ML pipeline**
-✅ **Decision-support logic**
-
----
-
----
-
-### 4.2 `requirements.txt`
-
-```txt
-streamlit
-pandas
-numpy
-scikit-learn
-xgboost
-shap
-networkx
-matplotlib
-```
-
----
-
-### 4.3 `app.py` (Main Router)
-
-```python
-
-```
-
----
-
-### 4.4 `core/indicators.py`
-
-```python
-
-```
-
----
-
-### 4.5 `pages/2_assessment.py`
-
-```python
-
-```
-
----
-
-### 4.6 `core/scoring.py`
-
-```python
-
-```
-
----
-
-### 4.7 `pages/3_scoring.py`
-
-```python
-
-```
-
----
-
-### 4.8 `core/ml_models.py`
-
-```python
-
-```
-
----
-
-### 4.9 `pages/4_ml_prediction.py`
-
-```python
-
-```
-
----
-
-### 4.10 `pages/5_explainability.py`
-
-```python
-
-```
-
----
-
-### 4.11 `pages/6_roadmap.py`
-
-```python
-
-```
-
----
-
-## 5. Why This Is Strong (Academically & Practically)
-
-✔ Traceable to **multiple peer-reviewed architectures**
-✔ Supports **self-assessment + indirect ML scoring**
-✔ Ready for **causal graphs, blockchain logging, satellite data**
-✔ SME-friendly (minimal data, progressive complexity)
-✔ Perfect for **journal submission, EU project demo, or PhD artifact**
-
----
-
-## Next Extensions (Optional, I can build these next)
-
-* ESG **Ontology + Knowledge Graph (RDF / NetworkX)**
-* **Causal DAG editor** (financial → ESG)
-* **Blockchain audit log (mocked Ethereum layer)**
-* **Copernicus satellite API stub**
-* **PRISMA-style evidence traceability**
-* **SME ESG certification report (PDF)**
-
-If you want, tell me **which research paper you want to implement next (one-by-one)** and I’ll extend this system **without breaking architectural consistency**.
-
-## Next (Recommended, in order)
-
-1. **Causal DAG layer** (financial → ESG)
-2. **Ontology / Knowledge Graph** (ESG → SDGs)
-3. **Longitudinal ESG tracking**
-4. **SME ESG certification report (PDF)**
-5. **Blockchain audit stub**
-
-
-If you want, say:
-
-> *“Extend this into a causal ESG system”*
-> or
-> *“Turn this into a journal-ready Methods + Architecture section”*
-
-I’ll do it **without changing your current code structure**.
-
-# esg_january_landscape
-
-Perfect question — this is exactly where your work **becomes system-level and publication-ready**.
-
-Below I give you **three tightly connected artifacts**:
-
-1. **A unified research JSON knowledge structure** (RQ ↔ Objectives ↔ Hypotheses ↔ Metrics ↔ Methodology)
-2. **Explicit relationship edges** (machine-readable)
-3. **A Sankey diagram (Streamlit-ready) that visualizes the full logic chain**
-
-This lets you:
-
-* trace **RQ → method → metric**
-* justify **design choices**
-* visually communicate your framework (papers, defense, demos)
-
----
-
-## 1️⃣ Unified Research Knowledge JSON
-
-📁 `data/research_framework.json`
-
-```json
-```
-
-This JSON is:
-
-* **machine-readable**
-* **graph-ready**
-* **ontology-compatible**
-* **future-proof** (can become KG / RDF later)
-
----
-
-## 2️⃣ Sankey Diagram Logic (What It Shows)
-
-![Image](https://www.researchgate.net/publication/325785277/figure/fig1/AS%3A675040488079362%401537953602336/Sankey-diagram-showing-the-data-collection-methods-right-employed-in-evaluation.ppm)
-
-![Image](https://www.researchgate.net/publication/385144401/figure/fig2/AS%3A11431281285229725%401729665209140/Sankey-diagram-on-artificial-intelligence-machine-learning-and-deep-learning-in-cloud.jpg)
-
-![Image](https://www.researchgate.net/publication/258276570/figure/fig2/AS%3A667809621221389%401536229629984/Flow-diagram-of-the-decision-support-system.png)
-
-**Flow direction:**
-
-```
-Research Questions
-        ↓
-    Objectives
-        ↓
-   Methodology
-        ↓
-   Hypotheses
-        ↓
-     Metrics
-```
-
-This answers reviewers’ favorite question:
-
-> “How exactly do your research questions translate into measurable outcomes?”
-
----
-
-## 3️⃣ Complete Streamlit Sankey Diagram Code
-
-📁 `pages/7_research_sankey.py`
-
-```python
-```
-
----
-
-## 4️⃣ Why This Is Very Strong Academically
-
-You now have:
-
-✅ **Formal research traceability**
-✅ **Visual justification of methodology**
-✅ **Machine-readable research design**
-✅ **Decision-support system alignment**
-✅ **Ready-to-extend knowledge graph**
-
-This is **exactly** the kind of artifact expected in:
-
-* PhD methodology chapters
-* design science research
-* AI system papers
-* EU Horizon / NSF proposals
-
----
-
-## 🔜 Natural Next Extensions (Choose One)
-
-1. **Convert this JSON → Knowledge Graph (NetworkX / RDF)**
-2. **Auto-generate Methodology section from JSON**
-3. **Add empirical results as weighted Sankey flows**
-4. **Link each Method → actual Python module**
-5. **Add temporal evolution (longitudinal ESG)**
-
-Just tell me which one you want next — we’ll build it cleanly on top of this.
-
-This is a **very good question**, and you’ve reached an important conceptual milestone.
-
-You are no longer facing a *coding* problem — you are facing a **research communication & explanatory power problem**.
-
-I’ll answer this in **three layers**, moving from *what you currently have* → *what is missing* → *how the Sankey actually explains things when used correctly*.
-
----
-
-## 1️⃣ What your current Sankey already explains (clearly)
-
-Right now, your Sankey diagram **does one thing well**:
-
-> It **proves traceability** between research components.
-
-### What is already explained
-
-Your diagram visually encodes:
-
-```
-Research Question
-   ↓
-Research Objective
-   ↓
-Methodological Step
-   ↓
-Hypothesis
-   ↓
-Evaluation Metric
-```
-
-For example (from your JSON):
-
-* **RQ3 – Explainability & Trust**
-  → **O4 – Apply explainable AI**
-  → **M5 – Explainability**
-  → **H3 – Indicator sparsity**
-  → **SHAP_mean_abs**
-
-This answers a **reviewer’s structural question**:
-
-> “How do your explainability results relate to your research questions?”
-
-So the diagram is already strong for:
-
-* **Design Science Research**
-* **Methodological justification**
-* **System architecture traceability**
-
-But…
-
----
-
-## 2️⃣ Why it *feels* insufficient (and you’re right)
-
-You correctly sense a gap because:
-
-### ❌ The Sankey does NOT yet explain:
-
-* *Which ESG indicators matter most*
-* *How strong the effects are*
-* *What the SHAP beeswarm actually means*
-* *What SMEs should do differently*
-
-Right now, the Sankey is **qualitative & structural**, while your SHAP plot is **quantitative & empirical** — and they are **not yet connected**.
-
-That’s why it feels like:
-
-> “I need more data”
-
-You don’t just need *more data* — you need **semantic enrichment**.
-
----
-
-## 3️⃣ What data is actually missing (precisely)
-
-You are missing **three critical data layers**.
-
----
-
-### 🔹 Layer A — Indicator-level evidence (from SHAP)
-
-Your SHAP beeswarm already shows this:
-
-* E1, G3, G1, E3 are dominant
-* S3, S1 are weaker
-* High values push ESG score positively
-
-But this information is **not encoded anywhere** in your research framework JSON.
-
-#### Missing data (example)
-
-```json
-"indicator_evidence": [
-  {
-    "indicator": "E1",
-    "pillar": "Environmental",
-    "mean_abs_shap": 3.42,
-    "direction": "positive"
-  },
-  {
-    "indicator": "G3",
-    "pillar": "Governance",
-    "mean_abs_shap": 3.01,
-    "direction": "positive"
-  }
-]
-```
-
-Without this, the Sankey cannot explain *why* M5 matters.
-
----
-
-### 🔹 Layer B — Empirical strength of links
-
-Currently, every Sankey link has:
-
-```python
-value = 1
-```
-
-So all flows look equally important.
-
-But your research already shows:
-
-* ML Training (M4) is empirically strong
-* Explainability (M5) produces ranked drivers
-* Some hypotheses are better supported than others
-
-#### Missing data (example)
-
-```json
 {
-  "source": "M5",
-  "target": "H3",
-  "weight": 0.82
-}
-```
-
-This allows:
-
-* Thicker flows = stronger empirical support
-* Thin flows = weaker evidence
-
----
-
-### 🔹 Layer C — Decision relevance for SMEs
-
-Your RQ4 is **decision support**, but nothing in the diagram answers:
-
-> “What should an SME do differently?”
-
-You need **action-level data**.
-
-#### Missing data (example)
-
-```json
-"recommendations": [
-  {
-    "indicator": "E1",
-    "action": "Implement energy monitoring system",
-    "priority": "High",
-    "linked_method": "M6"
-  }
-]
-```
-
-This bridges **SHAP → Roadmap**.
-
----
-
-## 4️⃣ How the Sankey *should* explain things (properly)
-
-Once enriched, the Sankey becomes a **storytelling device**, not just a schema.
-
-### Example narrative using your diagram
-
-> RQ3 asks whether ESG drivers can be explained transparently.
-> This is operationalized via O4 and implemented in M5 (Explainability).
-> Empirical SHAP analysis shows that E1, G3, and G1 explain over 65% of score variance, supporting H3.
-> This evidence is evaluated using SHAP mean absolute importance and ranking stability metrics.
-> The dominant drivers are then passed to M6 to generate targeted ESG improvement actions.
-
-This is exactly how:
-
-* journal reviewers
-* PhD examiners
-* grant evaluators
-
-**expect a framework diagram to be used**.
-
----
-
-## 5️⃣ What you should add next (concrete, minimal, high impact)
-
-### ✅ Step 1 — Add SHAP summary data to JSON
-
-```json
-"shap_summary": {
-  "top_indicators": [
-    { "id": "E1", "importance": 3.42 },
-    { "id": "G3", "importance": 3.01 },
-    { "id": "G1", "importance": 2.88 }
-  ]
+  "E1": 4, "E2": 2, "E3": 3,
+  "S1": 1, "S2": 3, "S3": 2,
+  "G1": 4, "G2": 3, "G3": 2
 }
 ```
 
 ---
 
-### ✅ Step 2 — Weight Sankey links
+## API reference (if applicable)
 
-```json
-{ "source": "M5", "target": "H3", "weight": 0.82 }
-```
+This repository does **not** expose a REST/HTTP API. Interaction happens via the Streamlit UI.
 
-Use `weight` instead of `1` in Plotly.
-
----
-
-### ✅ Step 3 — Add SME-facing interpretation text
-
-```json
-"interpretation": {
-  "E1": "Energy monitoring is the strongest ESG performance driver for SMEs.",
-  "G3": "Data protection maturity significantly influences governance scores."
-}
-```
+If you want an API later, the natural “API surface” would wrap:
+- `core/scoring.compute_esg_score(responses)` → deterministic score
+- `core/ml_models.train_model(X, y)` + `model.predict(input_df)` → predicted score
 
 ---
 
-## 6️⃣ Very important reassurance
+## Environment variables
 
-What you have now is **not wrong or weak**.
+No `.env` configuration is required by the current codebase.
 
-You already have:
-
-* ✔ A valid research framework
-* ✔ Correct SHAP usage
-* ✔ Methodological coherence
-* ✔ Design Science artifact
-
-You are simply at the stage where:
-
-> **structure must be complemented with evidence**
-
-This is exactly the transition from:
-
-* *architecture* → *analysis*
-* *framework* → *results*
-* *model* → *decision support*
+If you later add external data sources (e.g., ESG datasets, Copernicus, company registries) or model storage, a typical `.env` might include:
+- `DATA_DIR` (override data path)
+- `MODEL_PATH` (persisted model location)
+- `STREAMLIT_SERVER_PORT` / `STREAMLIT_SERVER_ADDRESS` (deployment configuration)
 
 ---
 
-## 7️⃣ If you want, I can do the next step for you
+## Contributing guide
 
-I can:
+Contributions are welcome, especially:
+- Expanding the indicator set and aligning it with a real SME framework
+- Improving the roadmap logic (from simple thresholds → evidence-based recommendations)
+- Adding caching/persistence for ML training (`st.cache_resource`) and model artifacts
+- Wiring `core/explainability.py` into the explainability page for consistency
 
-1. **Extend your JSON schema properly**
-2. **Inject SHAP results automatically**
-3. **Create a weighted Sankey**
-4. **Link SHAP beeswarm → Sankey**
-5. **Generate the “Results” narrative text**
-
-If you want, just say:
-
-> *“Let’s connect SHAP results to the Sankey”*
-> or
-> *“Turn this into a Results section explanation”*
-
-You’re on the **right research path** — this is exactly how strong ESG + XAI papers are built.
-
-## Final
-
-This is the **right question to ask at this stage**.
-You’re essentially asking:
-
-> *Given the data I already have (self-assessment, ML outputs, SHAP plots, scores), which research questions are actually addressed — and by what evidence?*
-
-Below is a **clear, research-grade mapping** from **existing data → research questions**, with **no hand-waving**.
+Suggested workflow:
+1) Fork the repo
+2) Create a branch for your change
+3) Make changes with clear, focused commits
+4) Run basic checks locally:
+   - `python -m compileall -q .`
+   - `streamlit run app.py`
+5) Open a PR with a short problem statement and screenshots (if UI changes)
 
 ---
 
-# 1️⃣ What data do you currently have? (Ground truth)
+## License
 
-From your system and screenshots, you already have **four concrete data artefacts**:
+No license file is currently included in this repository.
 
-### **D1 — ESG Indicator Definitions**
-
-* ESG indicators: `E1, E2, E3, S1, S2, S3, G1, G2, G3`
-* Structured, SME-specific
-* Low-burden (Likert 0–5)
+If you intend others to reuse/modify this code, add a `LICENSE` file (e.g., MIT, Apache-2.0, or GPL-3.0) and update this section accordingly.
 
 ---
 
-### **D2 — Self-Assessment Responses**
+## Scaling guide
 
-* Per-SME indicator scores (0–5)
-* Aggregated into an ESG score (0–100)
+This repository is currently a **single-process Streamlit prototype** with in-memory session state and on-demand model training. It can absolutely be deployed, but it will hit limits quickly as concurrent usage grows.
+
+### 1) Current bottlenecks (what breaks first under load)
+
+- **Per-user recomputation**: pages like `pages/4_ml_prediction.py` and `pages/5_explainability.py` train a model / compute SHAP at runtime. Under concurrent usage, CPU time will spike and response times will degrade.
+- **SHAP cost**: SHAP can be expensive (especially for larger datasets). It will become the first “CPU burner” as your dataset grows or if many users open the explainability page.
+- **No caching/persistence**: nothing is cached across sessions (no `st.cache_resource` for model objects; no model artifact saved to disk/object storage).
+- **Single instance constraints**: a single Streamlit server is limited by one machine’s CPU/RAM. Scaling it without a shared backend leads to inconsistent behavior (e.g., caching per instance).
+- **Data loading pattern**: reading `data/sample_training.csv` on each page load is fine for small files, but becomes wasteful if you swap in real datasets.
+- **State storage**: `st.session_state` is per-session, in-memory. It’s not durable and doesn’t support multi-instance consistency.
+
+### 2) Database scaling (indexing, caching, sharding, read replicas)
+
+Today the app has **no database**. If you evolve it into a production system, the typical data you’ll want to store includes:
+- Users/orgs (SME profiles)
+- Assessments (per date/period)
+- Generated scores + predictions
+- Model versions/metadata
+- Audit logs and exports
+
+Recommended baseline (MVP → production):
+- **Primary DB**: PostgreSQL (managed)
+  - Tables: `orgs`, `users`, `assessments`, `assessment_items`, `scores`, `predictions`, `model_versions`, `audit_events`
+  - Indexes:
+    - `assessments(org_id, created_at)`
+    - `assessment_items(assessment_id, indicator_id)`
+    - `predictions(org_id, created_at, model_version)`
+  - Use JSONB cautiously; prefer normalized rows for queries/analytics.
+- **Caching**: Redis
+  - Cache “hot” reads (latest assessment, score summaries)
+  - Rate-limit expensive operations (e.g., explanation jobs)
+- **Read replicas**: add when read-heavy (dashboards) outgrow primary.
+- **Partitioning (before sharding)**:
+  - Partition large time-series tables by month/quarter (e.g., `assessments`).
+- **Sharding**:
+  - Usually not needed until very large scale; if needed, shard by `org_id` with application-level routing.
+
+### 3) Backend scaling (load balancing, horizontal vs vertical scaling)
+
+Streamlit is a great UI layer, but it’s not the best place to run long-lived heavy compute for many concurrent users.
+
+Recommended architecture split:
+- **Frontend/UI**: Streamlit (stateless where possible)
+- **Backend API**: FastAPI (or similar) for persistence and compute orchestration
+- **Async jobs**: background workers for training/explainability (Celery/RQ/Arq) + a queue (Redis/SQS)
+
+Scaling tactics:
+- **Vertical scaling (early)**: bigger instance for Streamlit if concurrency is low (simple and cheap initially).
+- **Horizontal scaling (later)**: multiple Streamlit instances behind a load balancer
+  - Requires shared backing services (DB/Redis/object storage) so instances remain interchangeable.
+- **Load balancing**:
+  - Use an L7 load balancer (ALB/Cloud Run/Ingress) with health checks.
+  - Avoid per-instance local state; treat instances as disposable.
+- **Compute isolation**:
+  - Move model training + SHAP to background jobs; Streamlit triggers jobs and polls results.
+
+### 4) Frontend scaling (CDN, lazy loading, SSR/SSG options)
+
+This project’s “frontend” is Streamlit, not a traditional SPA/SSR app. Still, you can improve perceived performance:
+- **CDN**: put a CDN/edge in front of the app for static assets and TLS termination (CloudFront / Cloud CDN / Azure Front Door).
+- **Lazy loading (conceptual)**:
+  - Don’t compute SHAP until the user explicitly requests it (button-driven).
+  - Prefer “summary first”: show top features (fast) then offer full beeswarm (slow).
+- **SSR/SSG**:
+  - Not directly applicable to Streamlit. If you need SEO/public marketing pages, host a separate static site (Next.js, Astro) and link to the app.
+
+### 5) Infrastructure recommendations (AWS / GCP / Azure)
+
+Below are three “production-shaped” options; pick based on team familiarity.
+
+**AWS (common enterprise default)**
+- Compute: ECS Fargate (Streamlit + API) or EKS (if you already run Kubernetes)
+- Load balancing: ALB
+- DB: RDS PostgreSQL (+ read replica later)
+- Cache/queue: ElastiCache Redis (cache + job broker) or SQS for queue + Redis for cache
+- Object storage: S3 (exports, model artifacts)
+- Observability: CloudWatch + X-Ray (or OpenTelemetry to Grafana/Datadog)
+- Secrets: Secrets Manager / SSM Parameter Store
+
+**GCP (great for managed + simple ops)**
+- Compute: Cloud Run (Streamlit + API containers)
+- Load balancing: Cloud Load Balancing (or Cloud Run ingress)
+- DB: Cloud SQL for PostgreSQL
+- Cache: Memorystore (Redis)
+- Queue: Pub/Sub or Cloud Tasks
+- Storage: Cloud Storage (GCS)
+- Observability: Cloud Logging/Monitoring + Trace
+- Secrets: Secret Manager
+
+**Azure**
+- Compute: Container Apps (or AKS if you need Kubernetes)
+- Load balancing: Front Door / Application Gateway
+- DB: Azure Database for PostgreSQL
+- Cache: Azure Cache for Redis
+- Queue: Service Bus
+- Storage: Blob Storage
+- Observability: Azure Monitor / Application Insights
+- Secrets: Key Vault
+
+### 6) Cost estimate (rough; 1k / 10k / 100k users)
+
+These are intentionally **order-of-magnitude** estimates because real cost depends on:
+- concurrent users (not total users),
+- how often users run ML/SHAP,
+- dataset size,
+- and how much you cache/precompute.
+
+Assumptions for ballpark sizing:
+- 1k / 10k / 100k **monthly active users**
+- Peak concurrency roughly 1% of MAU (10 / 100 / 1,000 concurrent)
+- Heavy compute pages (ML/SHAP) are used by a minority; in production they run as async jobs.
+
+**1k users (small pilot) — ~$50–$200/month**
+- 1 small container instance for Streamlit (or Cloud Run min instances = 0)
+- Managed Postgres (small)
+- Minimal storage/logging
+
+**10k users (growing) — ~$300–$1,500/month**
+- 2–4 app instances behind LB (Streamlit + API)
+- RDS/CloudSQL sized up, maybe a small read replica
+- Redis cache
+- Background worker for jobs
+
+**100k users (serious usage) — ~$2,000–$15,000+/month**
+- Many stateless app instances + autoscaling
+- DB with read replicas + partitioning; possibly dedicated analytics store later
+- Redis cluster
+- Job queue + multiple workers (explainability/training)
+- CDN + increased egress/logging
+
+To make costs predictable at scale, prioritize:
+- caching, async jobs, precomputation,
+- and reducing SHAP frequency (or using cheaper explanation summaries).
+
+### 7) Roadmap: MVP → production-grade scaling path
+
+**Phase 0 (now): prototype hygiene**
+- Add caching where safe: `st.cache_data` for loading datasets; `st.cache_resource` for model objects.
+- Ensure feature alignment stays strict (already guarded in `pages/4_ml_prediction.py`).
+- Add basic logging around expensive operations (train, explain).
+
+**Phase 1 (MVP deployment): single instance**
+- Deploy Streamlit as one container (Cloud Run / ECS / Container Apps).
+- Add a real DB (Postgres) only if you need persistence; otherwise keep it stateless.
+- Add basic monitoring (request latency, CPU/RAM).
+
+**Phase 2 (early scale): split UI and backend**
+- Introduce a FastAPI backend:
+  - persist assessments and scores,
+  - provide a stable “scoring/prediction” interface,
+  - version model artifacts.
+- Store artifacts and exports in object storage (S3/GCS/Blob).
+
+**Phase 3 (growth): async compute + cache**
+- Move training/explainability to background jobs (queue + workers).
+- Add Redis:
+  - cache hot reads,
+  - broker jobs (or keep queue managed and use Redis purely for cache).
+- Introduce rate limits / quotas to protect expensive operations.
+
+**Phase 4 (production): HA + cost controls**
+- Multiple instances behind a load balancer with autoscaling.
+- DB read replicas; partition large tables; tune indexes based on real queries.
+- CDN in front for TLS/edge + static assets.
+- Security hardening:
+  - secrets manager,
+  - least-privilege IAM,
+  - audit logs,
+  - backups + disaster recovery plan.
+
+**Phase 5 (enterprise scale): analytics + governance**
+- Separate OLTP (Postgres) from analytics (BigQuery/Redshift/Snowflake).
+- Add model monitoring (data drift, performance metrics).
+- Implement tenant isolation rules (per org) and compliance controls.
 
 ---
 
-### **D3 — ML Model Outputs**
+## Competitive landscape (10 comparable products) + differentiation ideas
 
-* Trained regression model (tree-based)
-* Predicted ESG score
-* Prediction metrics (RMSE, MAE, R² available or computable)
+The ESG software space is broad. The closest “adjacent” products to this project tend to fall into one (or more) of these categories:
+- **Supplier ESG ratings / questionnaires** (supply chain risk + procurement enablement)
+- **ESG reporting and disclosure** (audit-ready reporting for frameworks/regulators)
+- **Carbon accounting / climate management** (Scope 1–3 measurement, reduction planning, supplier engagement)
+- **Materiality and regulatory monitoring** (policy + obligations tracking)
 
----
+Important note on “tech stack”: many vendors do not publicly disclose their detailed implementation stacks. Where stack details aren’t public, this section lists **observable/declared product capabilities** (e.g., “AI platform”, “API access”, “SaaS”, “SHAP/XAI is not mentioned”, etc.).
 
-### **D4 — Explainability Outputs (SHAP)**
+### 1) EcoVadis (supplier sustainability ratings)
 
-* Global feature importance (beeswarm)
-* Directionality (high vs low feature values)
-* Relative strength of indicators (E1, G3, G1 dominate)
+- What they do: Supplier sustainability ratings and scorecards for companies; large network of rated companies. EcoVadis reports 150,000+ rated companies.  
+- Tech stack (if known): Not publicly disclosed; operates a web-based platform and references ML usage in methodology disclosures.  
+- Business model: Subscription for ratings/solutions.  
+- Scale (public indicators): 150,000+ rated companies.  
+- Why successful:
+  - Strong distribution via procurement/supply-chain requirements (“your customer demands an EcoVadis rating” loop).
+  - Standardized questionnaires and benchmarks at global network scale.
+  - Clear outputs that map well to procurement workflows (scorecards, medals/badges).
 
-You **do not** currently have:
+Sources: EcoVadis company info / scale. https://ecovadis.com/about-us/ citeturn5search1
 
-* External benchmarks
-* Longitudinal data
-* Intervention outcomes
+### 2) Workiva (ESG + financial/regulatory reporting)
 
-That’s fine — your RQs do **not require them**.
+- What they do: Cloud platform for connected reporting workflows (SEC, financial, and sustainability/ESG reporting in one platform).  
+- Tech stack (if known): Not publicly disclosed; positioned as a cloud platform with AI capabilities.  
+- Business model: Subscription SaaS (public company).  
+- Scale (public indicators): Widely adopted in regulated reporting; large enterprise footprint (see company materials).  
+- Why successful:
+  - Deep entrenchment in regulated reporting workflows and controls.
+  - Collaboration + audit trail + data lineage as core product strengths.
+  - Strong switching costs once reporting is standardized.
 
----
+Sources: Workiva SEC reporting overview. https://www.workiva.com/solutions/sec-reporting citeturn0search2
 
-# 2️⃣ Research Question–by–Question: What data addresses what?
+### 3) Persefoni (carbon accounting + climate disclosure)
 
-## ✅ RQ1 – Assessment & Maturity
+- What they do: Carbon accounting and sustainability management platform (Scope 1–3), reporting, and disclosure support.  
+- Tech stack (if known): Not publicly disclosed; offers API access on higher tiers and positions itself as enterprise-grade.  
+- Business model: Tiered SaaS subscriptions (including a free/pro tier on their pricing page, plus paid tiers).  
+- Scale (public indicators): Public customer case studies exist (customer list is published).  
+- Why successful:
+  - Strong positioning around disclosure readiness and enterprise-grade assurance/security.
+  - Clear value proposition for complex Scope 3 programs and supplier data collection.
 
-> **RQ1:**
-> *How can SME-specific ESG indicators be operationalized into a structured self-assessment system that produces a meaningful ESG score?*
+Sources: Persefoni pricing and customers pages. https://www.persefoni.com/pricing and https://www.persefoni.com/en-gb/customers citeturn0search0turn5search2
 
-### ✔ Existing data that addresses RQ1
+### 4) Watershed (enterprise climate platform)
 
-| Evidence                  | Explanation                                                  |
-| ------------------------- | ------------------------------------------------------------ |
-| **D1 – Indicator schema** | Shows ESG indicators are explicitly defined and SME-oriented |
-| **D2 – Likert responses** | Demonstrates operationalization into measurable inputs       |
-| **Aggregated ESG score**  | Shows transformation from raw indicators → maturity score    |
+- What they do: Enterprise climate platform for measuring, reporting, and reducing emissions; publishes customer stories and highlights a sizable team.  
+- Tech stack (if known): Not publicly disclosed; marketed as a software platform with large emissions factor coverage and climate expertise embedded.  
+- Business model: Enterprise SaaS (typical for this category).  
+- Scale (public indicators): “Nearly 400 people” and customer examples listed on their site.  
+- Why successful:
+  - Strong enterprise go-to-market, services + software, and credible climate expertise.
+  - Focus on end-to-end programs (measurement → planning → action) vs “just reporting”.
 
-### ✔ What you can already claim
+Sources: Watershed “About us” + customer page. https://watershed.com/about-us and https://watershed.com/fr/customers citeturn5search0turn5search6
 
-* ESG indicators **can be operationalized**
-* The system **produces a consistent numeric ESG score**
-* Maturity differences across indicators are observable
+### 5) Sweep (enterprise carbon management)
 
-📌 **RQ1 is fully addressed** by existing data.
+- What they do: Carbon management platform aimed at larger enterprises (Scope 1–3, value chain, reporting).  
+- Tech stack (if known): Not publicly disclosed.  
+- Business model: Enterprise SaaS.  
+- Scale (public indicators): Significant venture funding and named enterprise customers in public materials.  
+- Why successful:
+  - Strong positioning for enterprise Scope 3 and supply-chain collaboration.
+  - Funding enables faster product and go-to-market expansion.
 
----
+Sources: Sweep Series B press release. https://www.businesswire.com/news/home/20220404005766/en/Climate-Tech-Firm-Sweep-Raises-%2473-Million-in-Series-B-Funding-Led-by-Coatue citeturn3search1
 
-## ✅ RQ2 – Predictive Capability
+### 6) Plan A (decarbonization + ESG platform)
 
-> **RQ2:**
-> *Can machine learning models trained on limited ESG indicators accurately estimate SME ESG scores?*
+- What they do: Carbon accounting + ESG reporting platform; European footprint and notable customers mentioned in press.  
+- Tech stack (if known): Not publicly disclosed; described as an “AI-powered” platform in some public materials.  
+- Business model: SaaS; offers API integration per reporting.  
+- Scale (public indicators): Reported 1,500+ clients in a funding press release; raised $27M Series A reported in press.  
+- Why successful:
+  - Clear European regulatory narrative (CSRD and related reporting needs).
+  - Customer and partner momentum in a compliance-driven market.
 
-### ✔ Existing data that addresses RQ2
+Sources: Demeter press release and TechCrunch coverage. https://demeter-im.com/wp-content/uploads/ENG_230919_Press-release_Plan-A_Funding.pdf and https://techcrunch.com/2023/09/19/plan-a-carbon-accounting/ citeturn2search4turn2search14
 
-| Evidence                               | Explanation                      |
-| -------------------------------------- | -------------------------------- |
-| **D2 – Indicator vectors**             | Model inputs                     |
-| **D3 – ML predictions**                | Model outputs                    |
-| **Prediction metrics (RMSE, MAE, R²)** | Quantitative accuracy evaluation |
+### 7) Greenly (carbon accounting SaaS)
 
-### ✔ What you can already claim
+- What they do: Carbon accounting SaaS platform (B2B) for measuring and managing footprints; has public funding coverage.  
+- Tech stack (if known): Not publicly disclosed; marketed as a SaaS platform.  
+- Business model: Subscription SaaS (typical).  
+- Scale (public indicators): Public funding coverage and broad business adoption; exact customer counts vary by source.  
+- Why successful:
+  - Clear mid-market-friendly positioning (carbon accounting made simpler).
+  - Strong packaging around “measure → reduce → report” with guidance and integrations.
 
-* Limited ESG indicators are **sufficient for prediction**
-* Tree-based models **learn non-linear ESG patterns**
-* Prediction quality can be **quantified**
+Sources: Wikipedia overview and third-party funding summaries. https://en.wikipedia.org/wiki/Greenly_(company) citeturn2search12
 
-📌 **RQ2 is fully addressed** by existing data.
+### 8) Normative (carbon accounting “engine”)
 
----
+- What they do: Carbon accounting platform/engine emphasizing transparent calculations and emissions factor depth.  
+- Tech stack (if known): Not publicly disclosed; positions itself as an engine with APIs and a large emissions-factor dataset.  
+- Business model: SaaS subscription (typical).  
+- Scale (public indicators): Funding press materials mention “hundreds of customers”.  
+- Why successful:
+  - Strong product story around transparency and standards alignment.
+  - “Engine” positioning fits embedding in larger ecosystems (partners, integrations).
 
-## ✅ RQ3 – Explainability & Trust
+Sources: Normative platform page and press release PDF. https://normative.io/platform/ and https://normative.io/wp-content/uploads/2021/10/Press-release-Emissions-accounting-engine-Normative-raises-E10-million-from-Europes-largest-climate-tech-funds.pdf citeturn3search0turn3search13
 
-> **RQ3:**
-> *Which ESG indicators most strongly influence predicted ESG scores, and can these influences be explained transparently?*
+### 9) Sphera (enterprise sustainability + EHS/operational risk)
 
-### ✔ Existing data that addresses RQ3
+- What they do: Enterprise sustainability + operational risk/EHS software; broad suite with large customer base.  
+- Tech stack (if known): Not publicly disclosed; marketed as SaaS platform (SpheraCloud).  
+- Business model: Enterprise software + services (subscription/licensing + implementation).  
+- Scale (public indicators): Sphera states 8,400+ customers on its website.  
+- Why successful:
+  - Very strong enterprise fit in heavy/regulated industries (EHS + sustainability).
+  - Platform breadth and long operating history.
 
-| Evidence                     | Explanation                             |
-| ---------------------------- | --------------------------------------- |
-| **D4 – SHAP beeswarm**       | Shows ranked indicator importance       |
-| **Color gradients**          | Show directionality (low → high impact) |
-| **Magnitude of SHAP values** | Quantifies contribution strength        |
+Sources: Sphera site (customer count) and product positioning. https://sphera.com/ citeturn4search3
 
-### ✔ What your SHAP plot already proves
+### 10) Datamaran (ESG regulatory monitoring + materiality)
 
-From your screenshot:
+- What they do: AI platform for ESG regulatory monitoring and materiality/risk insights (“smart way to ESG”).  
+- Tech stack (if known): Not publicly disclosed; described as an AI platform.  
+- Business model: Subscription SaaS (typical).  
+- Scale (public indicators): Company describes a team of 120+ ESG experts/data scientists/etc.  
+- Why successful:
+  - Clear niche: continuously monitoring a rapidly changing regulatory landscape.
+  - Strong “signal extraction” value proposition (reduce manual scanning/research).
 
-* **E1** (Energy monitoring) is the strongest driver
-* **G3, G1** dominate governance influence
-* Social indicators contribute less
-* High indicator values → positive ESG impact
-
-📌 **RQ3 is fully addressed** by existing data.
-
-This is a **strong result**, not exploratory.
-
----
-
-## ⚠️ RQ4 – Decision Support (Partially addressed)
-
-> **RQ4:**
-> *Can explainable ESG predictions be translated into actionable improvement roadmaps for SMEs?*
-
-### ✔ What you already have
-
-* Indicator-level importance (SHAP)
-* Identification of weak indicators (low scores)
-* Rule-based logic (thresholds)
-
-### ❌ What is missing
-
-* Explicit **action mapping**
-* Prioritization logic (what to fix first)
-* SME-readable recommendations
-
-### ✔ What you can currently claim
-
-* Explainability **enables prioritization**
-* High-impact indicators can be **identified for intervention**
-
-📌 **RQ4 is partially addressed**
-(but **not invalid** — just incomplete)
-
----
-
-# 3️⃣ Summary Table (Very Important)
-
-| Research Question                | Addressed by Existing Data? | Evidence                  |
-| -------------------------------- | --------------------------- | ------------------------- |
-| **RQ1 – Assessment & Maturity**  | ✅ Yes                       | D1, D2                    |
-| **RQ2 – Predictive Capability**  | ✅ Yes                       | D2, D3                    |
-| **RQ3 – Explainability & Trust** | ✅ Yes                       | D4                        |
-| **RQ4 – Decision Support**       | ⚠️ Partially                | D4 → needs action mapping |
+Sources: Datamaran site + about page. https://www.datamaran.com/ and https://www.datamaran.com/about-us citeturn4search0turn5search5
 
 ---
 
-# 4️⃣ Why the Sankey diagram matters here
+## What could differentiate *this* project (niche ideas)
 
-Your Sankey **does NOT provide evidence** itself.
-It provides **logical traceability**:
+Most successful ESG SaaS products win on **distribution**, **compliance trust**, and **workflow lock-in**. Your strongest “niche” opportunities are likely where large vendors are weakest or overpriced:
 
-* It shows **where each RQ is answered**
-* It shows **which data artefact supports which claim**
-* It prevents accusations of “black-box reasoning”
+1) **SME-first UX + low reporting burden**
+   - Optimize for minimal data entry, guided flows, and “good enough” evidence capture.
+   - Make “first ESG score in 15 minutes” a product promise.
 
-In a paper, the Sankey supports statements like:
+2) **Open, transparent scoring + explainability**
+   - Many ESG platforms are perceived as “black boxes”. A transparent, research-grounded scoring and explanation layer can build trust.
+   - Lean into reproducibility: clearly define indicator weights, scoring logic, and versioning.
 
-> “RQ3 is addressed through the explainability module (M5), operationalized via SHAP-based feature attribution and evaluated using SHAP mean absolute importance.”
+3) **Audit-friendly outputs for a *specific* standard**
+   - Pick a narrow initial compliance target and do it extremely well (e.g., a CSRD/ESRS-ready SME pack, or a supply-chain questionnaire export aligned to common customer requests).
+
+4) **Supplier-chain “response pack” generator**
+   - SMEs often face repeated ESG/CO2 requests from larger customers. A killer niche is automating reusable response packs:
+     - standardized answers,
+     - evidence attachments,
+     - structured exports (CSV/XLSX/JSON).
+
+5) **Privacy-first / self-hosted option**
+   - A meaningful niche (especially for SMEs) is providing a self-hostable version or “bring-your-own-cloud” deployment for sensitive data.
+
+6) **Explainability that leads directly to actions**
+   - The gap between “here’s a SHAP plot” and “here’s what to do next week” is huge.
+   - Invest in decision support: prioritized actions, effort/impact estimates, and roadmap tracking.
+
+If you tell me your target market (region + industry + whether you care more about **carbon** vs broader **ESG** vs **supplier questionnaires**), I can rewrite this section into a focused go-to-market positioning statement and a concrete feature moat.
+
+### “All of it” strategy (how to cover ESG + carbon + compliance + questionnaires)
+
+If your goal is to cover the full surface area (ESG scoring + carbon accounting + disclosure readiness + supplier questionnaires), the safest way to avoid becoming a “bloated tool” is to keep the product **modular**:
+
+- **Module A — SME ESG self-assessment + scoring (this repo today)**
+  - Fast onboarding, minimal fields, transparent scoring.
+- **Module B — Carbon accounting**
+  - Start with a pragmatic baseline (Scope 1–2) and add Scope 3 categories gradually.
+  - Provide a clear emissions-factor provenance and versioning story.
+- **Module C — Disclosure / compliance exports**
+  - Don’t attempt to support every framework at once.
+  - Implement “export packs” (CSV/XLSX/PDF) that map your internal indicator model to selected standards.
+- **Module D — Supplier questionnaire response packs**
+  - Provide a reusable knowledge base + evidence vault so SMEs can respond once and reuse across customers.
+
+**Positioning that can win against bigger suites**
+
+Big suites often win on breadth, but SMEs frequently need: (1) speed, (2) clarity, (3) affordability, and (4) reusability of answers/evidence.
+
+This project can carve out a durable niche by being:
+- **SME-first**: “first credible ESG + carbon snapshot in under an hour”
+- **transparent**: open scoring logic + explainability; version every indicator/model change
+- **export-native**: one-click “customer pack” exports and audit trails (not just dashboards)
+- **privacy-flexible**: offer SaaS + self-host / “bring your own cloud” for sensitive customers
+
+**Feature moat ideas (practical, defensible)**
+
+1) **Canonical data model**: a stable internal schema that maps to multiple outputs (questionnaires + disclosures).
+2) **Evidence vault**: attachments + links + provenance + expiry reminders (turns “ESG” into a repeatable workflow).
+3) **Change tracking**: indicator/version diffs that explain “why your score changed”.
+4) **Actionability loop**: roadmap items become tasks with owners/dates; track progress and re-score.
+5) **SME benchmark baselines**: lightweight peer comparisons by sector/size (even if initially coarse).
+
+**Go-to-market wedge without losing the “all” vision**
+
+Even if the endgame is “all of it”, pick one entry wedge first:
+- “Supplier response packs” (high pain, immediate ROI), or
+- “CSRD/ESRS-lite pack for SMEs” (compliance pull in EU), or
+- “Scope 1–2 + top Scope 3 categories” (climate programs).
+
+Then expand modules behind a consistent schema and export system.
 
 ---
 
-# 5️⃣ What you should say in a paper (example)
+## 6–12 month execution roadmap (milestones + data model + storage + API + deployment)
 
-You can already write:
+This roadmap assumes you want to evolve the current Streamlit prototype into a production-shaped system that supports:
+- ESG self-assessment + scoring
+- Carbon accounting (incremental)
+- Disclosure/export packs
+- Supplier questionnaire response packs
 
-> *RQ1–RQ3 are empirically addressed using structured ESG self-assessment data, supervised machine learning models, and SHAP-based explainability analysis. RQ4 is partially addressed by translating explainability outputs into indicator prioritization, with future work focusing on actionable intervention design.*
+It’s written to be **modular**: each phase delivers a usable product slice without blocking later expansion.
 
-That is **academically acceptable and honest**.
+### Guiding principles (to avoid “doing everything at once”)
 
----
-
-# 6️⃣ Next logical step (optional, not required)
-
-If you want to **fully close RQ4**, you only need:
-
-* A simple mapping:
-
-  ```
-  High SHAP + Low Score → High Priority Action
-  ```
-* No new data collection
-* No new models
+- **One canonical schema** internally; everything else is a view/export.
+- **Move compute out of Streamlit** as soon as it’s expensive (training, SHAP, report generation).
+- **Async for heavy jobs**, cached for repeatable results.
+- **Version everything** (indicator definitions, scoring rules, model artifacts, emissions factors).
 
 ---
 
-## ✅ Final takeaway
+### Phase 0 (Weeks 1–2): Production hygiene + schema foundation
 
-You already have **enough data to answer 3 out of 4 research questions convincingly**.
-The remaining one (RQ4) is a **design extension**, not a data failure.
+**Milestones**
+- Add app-level caching:
+  - `st.cache_data` for loading datasets
+  - `st.cache_resource` for model objects (short-lived)
+- Add basic observability hooks (structured logs around: scoring, training, explainability)
+- Freeze a canonical indicator schema (IDs + labels + metadata)
+- Define a versioning policy:
+  - `indicator_set_version`
+  - `scoring_version`
+  - `model_version`
 
-If you want, next I can:
+**Data model (draft)**
+- `Indicator {id, pillar, label, description?, active, version}`
+- `IndicatorSet {version, created_at, notes}`
 
-* Write the **Results section per RQ**
-* Turn this into a **table for a paper**
-* Design a **minimal roadmap module** to close RQ4
+**Storage**
+- Still file-based (`data/*`) for MVP, but align to a future DB schema.
 
-Just tell me how you want to proceed.
+**Deployment**
+- Keep local-only; optional single-instance deploy for demos.
+
+---
+
+### Phase 1 (Month 1–2): Persisted assessments + “export pack” MVP
+
+Goal: make it **useful for a real SME** by persisting assessments and generating reusable outputs.
+
+**Milestones**
+- Introduce a backend API (FastAPI recommended) to persist:
+  - org profile, assessments, scores
+- Implement “Export Pack v1”:
+  - assessment summary + score + gaps (CSV/XLSX + PDF/HTML)
+- Add authentication (start simple):
+  - passwordless email magic link OR OAuth (Google/Microsoft) for pilot users
+
+**Data model (minimum viable)**
+- `Org {id, name, industry, size_band, country, created_at}`
+- `User {id, org_id, email, role, created_at}`
+- `Assessment {id, org_id, period_start, period_end, created_at, indicator_set_version}`
+- `AssessmentItem {assessment_id, indicator_id, value_0_5}`
+- `Score {assessment_id, score_0_100, scoring_version, computed_at}`
+- `AuditEvent {id, org_id, user_id?, action, payload_json, created_at}`
+
+**Storage choices**
+- Primary DB: PostgreSQL (managed)
+- Object storage: S3/GCS/Azure Blob for exports (PDF/XLSX)
+- Optional cache: Redis (can wait until Phase 2 if usage is low)
+
+**API endpoints (v1)**
+- `POST /v1/orgs` → create org
+- `POST /v1/users` → invite user (or handled by auth provider)
+- `GET /v1/indicators` → return active indicator set + version
+- `POST /v1/assessments` → create assessment header
+- `PUT /v1/assessments/{assessment_id}/items` → upsert item values
+- `POST /v1/assessments/{assessment_id}/score` → compute deterministic score
+- `POST /v1/assessments/{assessment_id}/exports` → generate export pack (sync for now)
+- `GET /v1/assessments/{assessment_id}` → fetch assessment + items + score
+
+**Deployment plan**
+- Start with a single environment:
+  - Streamlit UI container + FastAPI container
+  - Managed Postgres
+  - Object storage bucket
+- Keep it simple: 1–2 instances behind a managed ingress.
+
+---
+
+### Phase 2 (Month 3–4): Carbon accounting “baseline” + evidence vault
+
+Goal: add the two biggest adoption accelerators for SMEs:
+1) basic carbon footprinting and
+2) evidence collection/reuse.
+
+**Milestones**
+- Implement carbon “baseline” module:
+  - Scope 1–2 first (stationary combustion + purchased electricity)
+  - Add a few high-impact Scope 3 categories (e.g., business travel, purchased goods) later
+- Add an Evidence Vault:
+  - upload documents, link URLs, tag to indicators
+  - expiry/reminder metadata (optional)
+- Add “Questionnaire Pack v1”:
+  - generate reusable answers from saved evidence + latest assessment
+
+**Data model additions**
+- `Evidence {id, org_id, name, kind, storage_uri, source_url?, uploaded_at, expires_at?}`
+- `EvidenceLink {evidence_id, indicator_id, note?}`
+- `EmissionFactor {id, source, region, unit, value, valid_from, valid_to, version}`
+- `ActivityData {id, org_id, period_start, period_end, activity_type, amount, unit, metadata_json}`
+- `EmissionsResult {id, org_id, period_start, period_end, scope, category, tco2e, factor_version, computed_at}`
+
+**Storage**
+- DB: Postgres for metadata
+- Blob storage: evidence files + generated packs
+- Cache: Redis begins to pay off (hot reads + rate limiting)
+
+**API endpoints (v2 additions)**
+- `POST /v1/evidence` (multipart upload) → returns `evidence_id`
+- `POST /v1/evidence/{id}/link` → link evidence to indicator(s)
+- `POST /v1/carbon/activity` → submit activity data
+- `POST /v1/carbon/compute` → compute emissions results (can be sync at small scale)
+- `GET /v1/carbon/results?period=...` → retrieve emissions summary
+
+**Deployment**
+- Same as Phase 1, but ensure blob storage + signed URLs for uploads/downloads.
+
+---
+
+### Phase 3 (Month 5–6): ML + explainability as async jobs + model registry
+
+Goal: make ML/explainability reliable under load and auditable.
+
+**Milestones**
+- Move ML training/prediction and SHAP generation to background jobs:
+  - job queue + workers
+  - job status + result storage
+- Add a simple Model Registry:
+  - store model artifacts + metadata + metrics
+  - enable rollbacks by version
+- Add evaluation metrics (RMSE/MAE/R²) logged per model version
+
+**Data model additions**
+- `Job {id, org_id, type, status, created_at, started_at?, finished_at?, error?}`
+- `JobResult {job_id, payload_json, storage_uri?}`
+- `ModelVersion {id, kind, created_at, training_data_ref, metrics_json, artifact_uri}`
+- `Prediction {id, assessment_id, model_version_id, predicted_score_0_100, created_at}`
+- `Explanation {id, model_version_id, kind, artifact_uri, created_at}` (e.g., SHAP summary)
+
+**Storage**
+- Redis: queue broker / caching
+- Blob storage: model artifacts, explanation artifacts, large exports
+
+**API endpoints (v3 additions)**
+- `POST /v1/models/train` → returns `job_id`
+- `POST /v1/models/{model_version}/predict` → returns `job_id` (or sync for small payloads)
+- `POST /v1/models/{model_version}/explain` → returns `job_id`
+- `GET /v1/jobs/{job_id}` → status
+- `GET /v1/jobs/{job_id}/result` → outputs (or signed URL)
+
+**Deployment**
+- Add a worker service:
+  - `api` service + `worker` service + `streamlit` service
+  - autoscale workers separately from UI/API
+
+---
+
+### Phase 4 (Month 7–9): Multi-tenant hardening + performance + compliance exports
+
+Goal: “production-grade” for multiple SMEs with predictable performance and strong exports.
+
+**Milestones**
+- Tenant isolation rules enforced everywhere (`org_id` scoping)
+- Role-based access control (RBAC) for org admins vs members
+- Caching strategy:
+  - cache “latest assessment summary” and “dashboard aggregates”
+- Add disclosure mapping packs (choose 1–2 to do well first):
+  - e.g., CSRD/ESRS-lite SME pack or a common supply-chain questionnaire template
+
+**Data model additions**
+- `Role {id, name}`
+- `UserRole {user_id, org_id, role_id}`
+- `DisclosurePack {id, org_id, standard, version, created_at, artifact_uri}`
+
+**API endpoints**
+- `POST /v1/disclosures/generate` → returns `job_id`
+- `GET /v1/disclosures/{id}` → metadata + download URL
+
+**Deployment**
+- Separate environments:
+  - `dev`, `staging`, `prod`
+- Add CI checks:
+  - linting, type checks (optional), smoke tests
+- Add backups + retention policies for DB and object storage
+
+---
+
+### Phase 5 (Month 10–12): Scale + analytics + enterprise readiness
+
+Goal: scale safely and become “enterprise-ready” where needed.
+
+**Milestones**
+- Horizontal scaling for UI/API behind an L7 load balancer
+- Read replica for Postgres if dashboards become read-heavy
+- Partition large tables by time for performance
+- Analytics pipeline (optional but powerful):
+  - export event + assessment data to a warehouse (BigQuery/Redshift/Snowflake)
+- Model monitoring:
+  - drift checks, metric tracking per org/industry segment
+
+**Deployment plan (cloud-agnostic)**
+- Compute: containerized services (`streamlit`, `api`, `worker`)
+- Ingress/LB: HTTPS termination + health checks + autoscaling
+- DB: managed Postgres + backups + read replica
+- Cache/queue: managed Redis (or managed queue + Redis cache)
+- Storage: object storage for artifacts and evidence, with signed URLs
+- Secrets: managed secrets store
+- Observability: centralized logs + metrics + traces (OpenTelemetry recommended)
+
+---
+
+### Recommended “final shape” (target architecture)
+
+- **Streamlit UI**: purely presentation + calling APIs; minimal compute
+- **API service**: authentication/authorization, persistence, orchestration
+- **Worker service**: ML training, SHAP/explanations, report generation
+- **Postgres**: system of record
+- **Redis/Queue**: async jobs + caching
+- **Object storage**: evidence + exports + model/explanation artifacts
+
+If you want, I can also:
+- add an `openapi.yaml` stub aligned to the endpoints above, or
+- scaffold a `backend/` FastAPI service + `docker-compose.yml` so the repo starts moving toward Phase 1 immediately.

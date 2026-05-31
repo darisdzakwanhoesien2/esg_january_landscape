@@ -19,6 +19,8 @@ def train_model(X, y):
     """
 
     if XGBOOST_AVAILABLE:
+        # XGBoost generally performs well on tabular data and can capture
+        # nonlinear relationships between indicators and ESG score.
         model = XGBRegressor(
             n_estimators=200,
             max_depth=4,
@@ -27,6 +29,7 @@ def train_model(X, y):
             n_jobs=4
         )
     else:
+        # Fallback model when XGBoost isn't installed/available.
         model = RandomForestRegressor(
             n_estimators=300,
             max_depth=10,
@@ -35,15 +38,3 @@ def train_model(X, y):
 
     model.fit(X, y)
     return model
-
-
-# from xgboost import XGBRegressor
-
-# def train_model(X, y):
-#     model = XGBRegressor(
-#         n_estimators=200,
-#         max_depth=4,
-#         learning_rate=0.05
-#     )
-#     model.fit(X, y)
-#     return model

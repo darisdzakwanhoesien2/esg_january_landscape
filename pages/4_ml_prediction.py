@@ -27,7 +27,8 @@ time.sleep(0.3)
 progress_bar.progress(30)
 
 status_text.text("Training ESG prediction model...")
-with st.spinner("Training ML model (XGBoost)..."):
+with st.spinner("Training ML model..."):
+    # `train_model` chooses XGBoost if available, otherwise falls back to RandomForest.
     model = train_model(X, y)
 
 progress_bar.progress(70)
@@ -44,6 +45,13 @@ progress_bar.progress(100)
 # -----------------------------
 if "assessment" in st.session_state:
     input_df = pd.DataFrame([st.session_state["assessment"]])
+    missing = [c for c in X.columns if c not in input_df.columns]
+    if missing:
+        st.error(
+            "Assessment responses don't match the model features. "
+            f"Missing: {', '.join(missing)}"
+        )
+        st.stop()
 
     with st.spinner("Predicting ESG score..."):
         pred = model.predict(input_df)[0]
