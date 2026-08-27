@@ -53,6 +53,39 @@ if "assessment" in st.session_state:
         )
         st.stop()
 
+    # map descriptive assessment keys to the model's feature names
+    feature_map = {
+        "Energy consumption monitoring": "E1",
+        "Carbon emissions tracking": "E2",
+        "Waste management policy": "E3",
+        "Employee safety policy": "S1",
+        "Diversity & inclusion": "S2",
+        "Community engagement": "S3",
+        "Board structure": "G1",
+        "Anti-corruption policy": "G2",
+        "Data protection": "G3",
+    }
+    # rename any descriptive columns to the short codes used in training
+    input_df = input_df.rename(columns={k: v for k, v in feature_map.items() if k in input_df.columns})
+
+    # determine expected feature order from the trained model or training X
+    expected_cols = None
+    try:
+        expected_cols = model.get_booster().feature_names
+    except Exception:
+        pass
+    if expected_cols is None:
+        try:
+            expected_cols = X.columns.tolist()
+        except Exception:
+            expected_cols = list(input_df.columns)
+
+    # add missing features with zeros and ensure correct column order
+    for col in expected_cols:
+        if col not in input_df.columns:
+            input_df[col] = 0
+    input_df = input_df[expected_cols]
+
     with st.spinner("Predicting ESG score..."):
         pred = model.predict(input_df)[0]
 
